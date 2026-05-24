@@ -329,7 +329,7 @@
 
 <script>
   // ── Replace with your Power Automate HTTP trigger URL ──
-  const POWER_AUTOMATE_URL = 'YOUR_POWER_AUTOMATE_URL_HERE';
+  const POWER_AUTOMATE_URL = 'https://defaultd78a821841354026a3a81cdd7223b4.d5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c36c690071c74898bfb6a2127c1373b5/triggers/manual/paths/invoke?api-version=1';
 
   // Set today as default date
   document.getElementById('arrivalDate').valueAsDate = new Date();
@@ -425,7 +425,7 @@
     document.getElementById('submitBtn').textContent = 'Submitting...';
 
     try {
-      if (POWER_AUTOMATE_URL !== 'YOUR_POWER_AUTOMATE_URL_HERE') {
+      if (POWER_AUTOMATE_URL !== 'https://defaultd78a821841354026a3a81cdd7223b4.d5.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/c36c690071c74898bfb6a2127c1373b5/triggers/manual/paths/invoke?api-version=1') {
         await fetch(POWER_AUTOMATE_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

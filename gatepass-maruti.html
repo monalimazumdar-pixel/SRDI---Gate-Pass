@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suzuki R&D Center India — Gate Pass System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f7fa; min-height: 100vh; display: flex; flex-direction: column;
+  }
+  .header { background: #1a1f36; padding: 16px 24px 14px; position: sticky; top: 0; z-index: 100; }
+  .header-accent { height: 3px; background: linear-gradient(90deg, #4f7cff, #00d4aa); }
+  .header-title { font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.05em; text-transform: uppercase; }
+  .header-sub { font-size: 10px; color: #4f7cff; font-weight: 600; margin-top: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .main { flex: 1; padding: 24px 16px 40px; max-width: 720px; margin: 0 auto; width: 100%; }
+
+  .card { background: #ffffff; border: 1px solid #e1e4ed; border-radius: 14px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid #f0f2f8; display: flex; align-items: center; gap: 10px; }
+  .card-icon { font-size: 18px; }
+  .card-title { font-size: 14px; font-weight: 600; color: #1a1f36; }
+  .card-sub { font-size: 12px; color: #8892a8; margin-top: 1px; }
+  .card-body { padding: 18px; }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.09em; color: #8892a8;
+    display: flex; align-items: center; gap: 8px;
+    margin: 16px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e1e4ed; }
+
+  /* GUEST TYPE BUTTONS */
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (min-width: 500px) { .type-grid { grid-template-columns: repeat(5, 1fr); } }
+  .type-btn {
+    background: #f5f7fa; border: 1.5px solid #e1e4ed;
+    border-radius: 10px; padding: 12px 6px;
+    text-align: center; cursor: pointer; transition: all 0.15s;
+  }
+  .type-btn:hover { border-color: #b0c0ff; background: #f8faff; }
+  .type-btn.selected { background: #f0f4ff; border-color: #4f7cff; }
+  .type-icon { font-size: 20px; margin-bottom: 5px; }
+  .type-label { font-size: 10px; font-weight: 600; color: #4a5270; line-height: 1.3; }
+  .type-btn.selected .type-label { color: #4f7cff; }
+
+  /* FORM GRID */
+  .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 500px) { .form-grid.col2 { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 500px) { .form-grid.col3 { grid-template-columns: 1fr 1fr 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; font-weight: 600; color: #4a5270; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field label .req { color: #4f7cff; margin-left: 2px; }
+  .field input, .field select {
+    background: #f8f9fc; border: 1.5px solid #e1e4ed;
+    border-radius: 8px; padding: 11px 14px;
+    font-size: 14px; color: #1a1a2e; font-family: inherit;
+    outline: none; transition: border-color 0.15s, background 0.15s;
+    width: 100%; height: 48px;
+  }
+  .field input:focus, .field select:focus {
+    border-color: #4f7cff; background: #f8faff;
+    box-shadow: 0 0 0 3px rgba(79,124,255,0.1);
+  }
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238892a8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
+  .field input.error { border-color: #ff4757 !important; background: #fff8f8; }
+
+  /* VEHICLE SECTION — hidden by default */
+  .vehicle-section { display: none; margin-top: 12px; }
+  .vehicle-section.show { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #f8f9fc; border: 1.5px solid #e1e4ed;
+    border-radius: 8px; padding: 11px 14px;
+  }
+  .toggle-row.active { border-color: #4f7cff; background: #f8faff; }
+  .toggle-info .toggle-label { font-size: 13px; font-weight: 500; color: #1a1f36; }
+  .toggle-info .toggle-sub { font-size: 11px; color: #8892a8; margin-top: 1px; }
+  .toggle-switch {
+    width: 44px; height: 24px; border-radius: 12px;
+    background: #e1e4ed; border: none; cursor: pointer;
+    position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: #4f7cff; }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.on::after { transform: translateX(20px); }
+
+  /* SUBMIT */
+  .submit-area {
+    background: #f8f9fc; border-top: 1px solid #e1e4ed;
+    padding: 16px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .submit-info { font-size: 12px; color: #8892a8; line-height: 1.5; }
+  .submit-info strong { color: #4a5270; }
+  .submit-btn {
+    background: #4f7cff; color: #fff; border: none;
+    border-radius: 10px; padding: 13px 28px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+    letter-spacing: 0.02em; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(79,124,255,0.3);
+  }
+  .submit-btn:hover { background: #3d6aff; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { background: #b0c0ff; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #fff; border: 1px solid #e1e4ed;
+    border-radius: 12px; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 200; max-width: 340px; width: calc(100% - 48px);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast-icon { font-size: 22px; flex-shrink: 0; }
+  .toast-text { font-size: 14px; font-weight: 600; color: #1a1f36; }
+  .toast-sub { font-size: 12px; color: #8892a8; margin-top: 2px; }
+
+  /* LOADING */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(255,255,255,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .spinner {
+    width: 40px; height: 40px; border: 3px solid #e1e4ed;
+    border-top-color: #4f7cff; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PASS BADGE */
+  .pass-badge {
+    display: none; background: #f0f4ff; border: 1.5px solid #4f7cff;
+    border-radius: 10px; padding: 14px 18px; margin: 0 18px 18px;
+    text-align: center;
+  }
+  .pass-badge.show { display: block; }
+  .pass-badge-label { font-size: 10px; font-weight: 700; color: #8892a8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .pass-badge-id { font-size: 24px; font-weight: 700; color: #4f7cff; font-family: monospace; }
+  .pass-badge-sub { font-size: 11px; color: #8892a8; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Suzuki R&D Center India — Gate Pass</div>
+  <div class="header-sub">Security Desk · Visitor Management System</div>
+</div>
+<div class="header-accent"></div>
+
+<div class="main">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🪪</div>
+      <div>
+        <div class="card-title">New Gate Pass Request</div>
+        <div class="card-sub">Fill details and submit — security team is notified automatically</div>
+      </div>
+    </div>
+
+    <div class="pass-badge" id="passBadge">
+      <div class="pass-badge-label">Gate Pass Created</div>
+      <div class="pass-badge-id" id="passIdText">GP-0000</div>
+      <div class="pass-badge-sub">Security team notified · Entry logged to register</div>
+    </div>
+
+    <div class="card-body">
+
+      <!-- GUEST TYPE -->
+      <div class="section-label">Guest type</div>
+      <div class="type-grid">
+        <div class="type-btn selected" data-value="Vendor" onclick="selectType(this)">
+          <div class="type-icon">🚚</div><div class="type-label">Vendor</div>
+        </div>
+        <div class="type-btn" data-value="Client / Customer" onclick="selectType(this)">
+          <div class="type-icon">🤝</div><div class="type-label">Client / Customer</div>
+        </div>
+        <div class="type-btn" data-value="Government" onclick="selectType(this)">
+          <div class="type-icon">🏛️</div><div class="type-label">Government</div>
+        </div>
+        <div class="type-btn" data-value="Personal Visitor" onclick="selectType(this)">
+          <div class="type-icon">👤</div><div class="type-label">Personal Visitor</div>
+        </div>
+        <div class="type-btn" data-value="Delivery" onclick="selectType(this)">
+          <div class="type-icon">📦</div><div class="type-label">Delivery</div>
+        </div>
+      </div>
+
+      <!-- WORKSITE & DATE -->
+      <div class="section-label">Worksite & date</div>
+      <div class="form-grid col2">
+        <div class="field">
+          <label>Worksite <span class="req">*</span></label>
+          <select id="worksite" required>
+            <option value="">— Select worksite —</option>
+            <option value="HO">HO</option>
+            <option value="R&D">R&D</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Date of Arrival <span class="req">*</span></label>
+          <input type="date" id="arrivalDate" required>
+        </div>
+      </div>
+
+      <!-- GUEST DETAILS -->
+      <div class="section-label">Guest details</div>
+      <div class="form-grid col2">
+        <div class="field">
+          <label>Guest Name <span class="req">*</span></label>
+          <input type="text" id="guestName" placeholder="Full name" required>
+        </div>
+        <div class="field">
+          <label>Company / Organisation</label>
+          <input type="text" id="company" placeholder="Company name">
+        </div>
+      </div>
+      <div class="form-grid col2">
+        <div class="field">
+          <label>Host Employee <span class="req">*</span></label>
+          <input type="text" id="host" placeholder="Employee being visited" required>
+        </div>
+        <div class="field">
+          <label>Purpose of Visit</label>
+          <input type="text" id="purpose" placeholder="e.g. Business meeting">
+        </div>
+      </div>
+      <div class="form-grid col2">
+        <div class="field">
+          <label>Guest Mobile Number</label>
+          <input type="tel" id="guestMobileNumber" placeholder="+91 98765 43210">
+        </div>
+        <div class="field">
+          <label>Arrival Time <span class="req">*</span></label>
+          <input type="time" id="arrivalTime" required>
+        </div>
+      </div>
+      <div class="form-grid col2">
+        <div class="field">
+          <label>Departure Time</label>
+          <input type="time" id="departureTime">
+        </div>
+      </div>
+
+      <!-- VEHICLE ENTRY -->
+      <div class="section-label">Vehicle entry</div>
+      <div class="toggle-row" id="vehicleToggleRow">
+        <div class="toggle-info">
+          <div class="toggle-label">Vehicle Entry Pass Required</div>
+          <div class="toggle-sub">Toggle on to collect vehicle number</div>
+        </div>
+        <button class="toggle-switch" id="vehicleToggle" onclick="toggleVehicle()" type="button"></button>
+      </div>
+      <div class="vehicle-section" id="vehicleSection">
+        <div class="field">
+          <label>Vehicle Number <span class="req">*</span></label>
+          <input type="text" id="vehicleNumber" placeholder="MH 01 AB 1234">
+        </div>
+      </div>
+
+      <!-- ADDITIONAL -->
+      <div class="section-label">Additional info</div>
+      <div class="form-grid">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Carrying Laptop / Device</div>
+            <div class="toggle-sub">Guest bringing electronic devices</div>
+          </div>
+          <button class="toggle-switch" id="laptopToggle" onclick="this.classList.toggle('on')" type="button"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Needs Escort</div>
+            <div class="toggle-sub">Accompany guest to floor / department</div>
+          </div>
+          <button class="toggle-switch" id="escortToggle" onclick="this.classList.toggle('on')" type="button"></button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="submit-area">
+      <div class="submit-info">
+        <strong>On submit:</strong> Pass created · Email sent to security · Logged to register
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="submitPass()">
+        🚀 Submit Gate Pass
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <div>
+    <div class="toast-text" id="toastText">Pass submitted!</div>
+    <div class="toast-sub" id="toastSub">Security team notified</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+</div>
+
+<script>
+  // ── Replace with your Power Automate HTTP trigger URL ──
+  const POWER_AUTOMATE_URL = 'YOUR_POWER_AUTOMATE_URL_HERE';
+
+  // Set today as default date
+  document.getElementById('arrivalDate').valueAsDate = new Date();
+
+  // Guest type selector
+  function selectType(el) {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // Vehicle toggle — shows/hides vehicle number field
+  function toggleVehicle() {
+    const toggle = document.getElementById('vehicleToggle');
+    const section = document.getElementById('vehicleSection');
+    const row = document.getElementById('vehicleToggleRow');
+    toggle.classList.toggle('on');
+    const isOn = toggle.classList.contains('on');
+    section.classList.toggle('show', isOn);
+    row.classList.toggle('active', isOn);
+    if (!isOn) document.getElementById('vehicleNumber').value = '';
+  }
+
+  // Toast notification
+  function showToast(text, sub, icon = '✅') {
+    document.getElementById('toastIcon').textContent = icon;
+    document.getElementById('toastText').textContent = text;
+    document.getElementById('toastSub').textContent = sub;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  // Generate Pass ID
+  function generatePassId() {
+    const d = new Date();
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    const rand = String(Math.floor(Math.random()*900)+100);
+    return 'GP-' + yy + mm + dd + '-' + rand;
+  }
+
+  // Submit
+  async function submitPass() {
+    // Validate required fields
+    const required = [
+      { id: 'worksite', label: 'Worksite' },
+      { id: 'arrivalDate', label: 'Date of Arrival' },
+      { id: 'guestName', label: 'Guest Name' },
+      { id: 'host', label: 'Host Employee' },
+      { id: 'arrivalTime', label: 'Arrival Time' }
+    ];
+    // Also validate vehicle number if vehicle toggle is on
+    if (document.getElementById('vehicleToggle').classList.contains('on')) {
+      required.push({ id: 'vehicleNumber', label: 'Vehicle Number' });
+    }
+
+    for (const f of required) {
+      const el = document.getElementById(f.id);
+      if (!el.value.trim()) {
+        el.classList.add('error');
+        el.focus();
+        setTimeout(() => el.classList.remove('error'), 2500);
+        showToast(f.label + ' is required', 'Please fill all required fields (*)', '⚠️');
+        return;
+      }
+    }
+
+    const vehicleOn = document.getElementById('vehicleToggle').classList.contains('on');
+    const selectedType = document.querySelector('.type-btn.selected');
+
+    const payload = {
+      PassType:          selectedType ? selectedType.dataset.value : '',
+      Worksite:          document.getElementById('worksite').value,
+      GuestName:         document.getElementById('guestName').value,
+      Company:           document.getElementById('company').value,
+      Host:              document.getElementById('host').value,
+      Purpose:           document.getElementById('purpose').value,
+      ArrivalDate:       document.getElementById('arrivalDate').value,
+      ArrivalTime:       document.getElementById('arrivalTime').value,
+      DepartureTime:     document.getElementById('departureTime').value,
+      VehicleEntryPass:  vehicleOn ? 'Yes' : 'No',
+      VehicleNumber:     vehicleOn ? document.getElementById('vehicleNumber').value : 'N/A',
+      GuestMobileNumber: document.getElementById('guestMobileNumber').value,
+      CarryingLaptop:    document.getElementById('laptopToggle').classList.contains('on') ? 'Yes' : 'No',
+      NeedsEscort:       document.getElementById('escortToggle').classList.contains('on') ? 'Yes' : 'No',
+      Status:            'Pending'
+    };
+
+    // Show loading
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = 'Submitting...';
+
+    try {
+      if (POWER_AUTOMATE_URL !== 'YOUR_POWER_AUTOMATE_URL_HERE') {
+        await fetch(POWER_AUTOMATE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Demo mode
+        await new Promise(r => setTimeout(r, 1500));
+      }
+
+      const passId = generatePassId();
+      document.getElementById('passIdText').textContent = passId;
+      document.getElementById('passBadge').classList.add('show');
+      showToast(passId + ' created!', 'Security team notified · Entry logged');
+      resetForm();
+
+    } catch (err) {
+      showToast('Submission failed', 'Please check connection and try again', '❌');
+    } finally {
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').textContent = '🚀 Submit Gate Pass';
+    }
+  }
+
+  // Reset form
+  function resetForm() {
+    ['guestName','company','host','purpose','arrivalTime',
+     'departureTime','vehicleNumber','guestMobileNumber'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('worksite').value = '';
+    document.getElementById('arrivalDate').valueAsDate = new Date();
+    document.getElementById('laptopToggle').classList.remove('on');
+    document.getElementById('escortToggle').classList.remove('on');
+    document.getElementById('vehicleToggle').classList.remove('on');
+    document.getElementById('vehicleToggleRow').classList.remove('active');
+    document.getElementById('vehicleSection').classList.remove('show');
+    document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+  }
+</script>
+</body>
+</html>
